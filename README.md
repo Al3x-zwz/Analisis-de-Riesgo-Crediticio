@@ -24,6 +24,22 @@ Los datos originales simulan el *core* bancario de una entidad financiera, conso
 
 ![Muestra de la base de datos](images/imagetop5.png)
 
+### Descripción de las Columnas
+
+| Columna | Descripción |
+| :--- | :--- |
+| `ACC_NO` | Identificador único de la cuenta crediticia del cliente. |
+| `INVESTMENT_TOTAL` | Monto total desembolsado o invertido originalmente en el crédito. |
+| `ACCCURRENTBALANCE` | Saldo deudor actual de la cuenta a la fecha de corte. |
+| `INF_MARITAL_STATUS` | Estado civil del titular (`M`: Casado, `U`: Soltero, `O`: Otro). |
+| `INF_GENDER` | Género del cliente registrado en el sistema (`M`: Masculino, `F`: Femenino). |
+| `INSTALL_SIZE` | Importe o tamaño de la cuota periódica exigida para el pago del préstamo. |
+| `DUE_PAYMENT` | Monto total vencido o adeudado en mora por el titular. |
+| `COMPENSATION_CHARGED` | Indicador de penalidad o cargo moratorio aplicado (`Y`: Sí, `N`: No). |
+| `CLIENT_TYPE` | Clasificación geográfica del cliente (`Rural`, `Semi-urban`, `Urban`). |
+| `QUALITY_OF_LOAN` | Calificación crediticia asignada (`G`: Buen crédito / Normal, `B`: Crédito en mora / Default). |
+| `REPAY_MODE` | Modalidad o canal asignado para el repago de la deuda. |
+
 ---
 
 ## Tareas (Task)
