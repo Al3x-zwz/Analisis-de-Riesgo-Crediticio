@@ -5,7 +5,9 @@
 
 ## Resumen (Overview)
 
-El departamento de Riesgos de una institución financiera busca optimizar su política de originación y cobranzas. Sin embargo, carecían de una visión granular sobre cómo interactúan las variables demográficas y los términos de los préstamos con la probabilidad de incumplimiento (*default*). Mi objetivo en este proyecto es utilizar **SQL** dentro de **SQL Server Management Studio (SSMS)** para auditar la integridad de la base de datos, estructurar consultas financieras complejas y extraer *insights* estratégicos que permitan mitigar la severidad de pérdida (*Loss Given Default*) y focalizar los esfuerzos de recuperación de cartera.
+## Resumen
+
+Proyecto de análisis exploratorio de datos (EDA) sobre una cartera crediticia utilizando SQL Server (T-SQL). El análisis abarca la limpieza de datos, la identificación de patrones de morosidad, la concentración de riesgo por segmento demográfico y la detección de inconsistencias operativas en los registros de saldo deudor.
 
 ---
 
@@ -44,7 +46,9 @@ Los datos originales simulan el *core* bancario de una entidad financiera, conso
 
 ## Tareas (Task)
 
-En este análisis, resolvemos 10 preguntas de negocio de dificultad progresiva (aplicando desde agregaciones básicas hasta *Window Functions*) para evaluar el riesgo de la cartera:
+## Preguntas de Negocio
+
+El análisis responde a 10 consultas orientadas a la evaluación del riesgo y la estructura de la cartera:
 
 1. **Distribución de Cartera:** ¿Cuál es el volumen total invertido y el saldo promedio según el tipo de cliente?
 2. **Estado Civil y Riesgo:** ¿Cuál es la cantidad total de préstamos y cuántos de ellos están clasificados como malos agrupados por estado civil?
@@ -81,7 +85,7 @@ WHERE ACC_NO IS NULL;
 
 ### Pregunta #1: ¿Cuál es el volumen total invertido y el saldo promedio según el tipo de cliente?
 
-Encontré la distribución de la cartera utilizando las funciones de agregación `SUM`, `AVG` y `COUNT`, agrupando los resultados con `GROUP BY`. Dado que arrastrábamos valores nulos de la importación, utilicé la cláusula `WHERE` para limpiar el campo categórico antes del cálculo.
+Cálculo del volumen colocado, saldo promedio y número de créditos agrupados por tipo de cliente, excluyendo registros nulos o inconsistentes.
 
 ```sql
 -- Distribución de Cartera: Volumen, saldo promedio y cantidad de créditos --
@@ -102,12 +106,10 @@ ORDER BY Volumen_Invertido_Total DESC;
 
 *Volumen invertido y saldo actual promedio segmentado por zona*
 
-El análisis revela una altísima concentración de la cartera en el sector Rural, el cual representa el núcleo duro del negocio con más de 26,000 préstamos activos y el mayor volumen de capital invertido.
-
-Sin embargo, es vital monitorear este segmento de cerca, ya que también presenta el saldo actual promedio más alto (1.29 millones) en comparación con los sectores Urbano y Semi-urbano, lo que indica una exposición significativamente mayor al riesgo crediticio en estas zonas.
+El sector Rural concentra el mayor volumen de colocación (26,144 créditos) y presenta el saldo promedio más alto (1.29 millones), superando ampliamente a las zonas urbana y semiurbana.
 
 ## Pregunta #2: ¿Cuál es la cantidad total de préstamos y la tasa de morosidad por estado civil?
-Para calcular el índice de default exacto, utilicé un conteo condicional anidando la función CASE WHEN dentro de un SUM. Además, apliqué la función CAST transformando el resultado a DECIMAL(5, 2) para asegurar que la tasa porcentual se visualice de forma limpia con dos decimales.
+Cálculo de la tasa de morosidad porcentual por estado civil, filtrando operaciones con calificación de riesgo 'B'.
 
 ```sql
 -- Volumen de créditos y tasa de morosidad por estado civil --
@@ -126,13 +128,11 @@ ORDER BY Tasa_Morosidad_Pct DESC;
 
 *Tasa de morosidad porcentual por categoría de estado civil*
 
-El segmento M (Casados) concentra la gran mayoría de la cartera con 35,412 préstamos y presenta la tasa de morosidad más alta de la tabla con un 11.23%, registrando casi 4,000 créditos en estado crítico.
-
-En contraste, el segmento U (Solteros) muestra un índice de impago menor (9.02%). Esto evidencia estadísticamente que el mayor volumen de pérdida crediticia esperada para la entidad se concentra de forma desproporcionada en los prestatarios casados.
+El segmento casado (M) no solo representa el 94% de las operaciones, sino que registra la tasa de morosidad más alta (11.23%), concentrando prácticamente todo el riesgo de incumplimiento.
 
 ### Pregunta #3: ¿Quiénes son los 5 clientes con el mayor pago atrasado en mala calificación?
 
-Para identificar a los mayores deudores de la cartera, utilicé la cláusula `TOP 5` combinada con un ordenamiento descendente (`ORDER BY DESC`). Filtré específicamente a aquellos clientes con calificación crediticia 'B' (en mora) para aislar el riesgo real.
+Identificación de los 5 clientes con mayor saldo vencido dentro del segmento en mora ('B').
 
 ```sql
 -- Top 5 Deudores: Clientes en mora con el mayor monto adeudado --
@@ -159,7 +159,7 @@ Los 5 principales deudores en mora pertenecen en su totalidad al segmento Rural 
 Esta coincidencia demográfica en los casos más extremos confirma que el riesgo de severidad de pérdida (Loss Given Default - LGD) está altamente concentrado. Este grupo requiere planes de reestructuración y cobranza judicial prioritaria para contener el deterioro de provisiones.
 
 ## Pregunta #4: ¿Cómo varía la calidad del préstamo según rangos del tamaño de cuota?
-El objetivo de esta consulta fue transformar un dato continuo (monto de la cuota) en dimensiones categóricas. Utilicé la sentencia CASE WHEN para crear rangos personalizados ("Bandas") y anidé un conteo condicional para obtener la tasa de morosidad exacta por cada nivel de exigencia de pago.
+Segmentación de la cartera en rangos de cuota mensual y cálculo de la morosidad respectiva por tramo.
 
 ```sql
 -- Impacto de Cuotas: Segmentación por tamaño de cuota y tasa de morosidad --
@@ -189,12 +189,10 @@ ORDER BY Rango_Cuota;
 
 *Porcentaje de morosidad distribuido por exigencia de pago mensual*
 
-El análisis revela un riesgo concentrado en dos perfiles opuestos. El grueso de la cartera (más de 30,000 créditos) cae en la categoría "Sin Cuota Fija" presentando la mayor tasa de morosidad (11.61%), un hallazgo estructural que exige revisar las políticas de originación para este producto atípico.
-
-Por otro lado, en los créditos regulares existe una relación directa entre el tamaño de la obligación y el impago: la morosidad es de apenas 1.57% para cuotas bajas, sube al 5.19% en cuotas medias, y se dispara al 10.49% en cuotas altas, evidenciando que obligaciones por encima de 20,000 estrangulan el flujo de caja del cliente.
+Se observa un salto notable en la morosidad al superar los 20,000 de cuota (10.49% frente a 1.57% en cuotas bajas). Asimismo, los créditos sin cuota fija representan la mayor parte de la mora absoluta.
 
 ## Pregunta #5: ¿Cuál es la suma total de pagos atrasados por género para clientes penalizados?
-Aislé la cartera utilizando un filtro estricto (WHERE COMPENSATION_CHARGED = 'Y') para analizar únicamente a los clientes que recibieron una penalidad económica, sumando su deuda vencida y agrupándola por la variable demográfica de género.
+Cálculo del volumen de clientes penalizados y del monto total vencido, agrupado por género.
 
 ```sql
 -- Penalidad y Género: Total de pagos atrasados para clientes con compensación --
@@ -213,12 +211,10 @@ ORDER BY Total_Pagos_Atrasados DESC;
 
 *Volumen de deuda en mora y cantidad de clientes penalizados por género*
 
-Al observar a los clientes penalizados, el género masculino (M) concentra el mayor volumen absoluto de deuda vencida, acumulando más de 3.6 mil millones en 12,818 operaciones.
-
-Sin embargo, el segmento femenino (F) representa un riesgo crítico oculto: con menos de un tercio de clientes (3,887), su deuda promedio por prestatario en mora es casi el doble frente a la de los hombres. La severidad del impago individual es significativamente más agresiva en este grupo.
+El segmento masculino concentra el 76% de los clientes penalizados y la mayor deuda vencida absoluta (3,612 millones). Sin embargo, el segmento femenino registra una deuda promedio por caso sustancialmente mayor (527 mil vs. 281 mil en hombres), lo que evidencia un impacto unitario más severo cuando incurre en mora.
 
 ## Pregunta #6: ¿Cuántos clientes presentan un saldo actual que supera su préstamo inicial?
-Para detectar anomalías transaccionales, utilicé operadores lógicos de comparación cruzada entre dos columnas numéricas de la misma fila (ACCCURRENTBALANCE > INVESTMENT_TOTAL), y apliqué una operación matemática dentro de la función de agregación para cuantificar el desfase.
+Auditoría para identificar operaciones donde el saldo actual reportado supera el monto original financiado y cálculo de la diferencia total.
 
 ```sql
 -- Detección de Anomalías: Clientes con saldo actual mayor a la inversión inicial --
@@ -235,12 +231,10 @@ WHERE ACCCURRENTBALANCE > INVESTMENT_TOTAL;
 
 *Desfase total en cuentas donde la deuda actual excede el desembolso inicial* 
 
-La auditoría de datos identificó 3,050 operaciones donde el saldo deudor actual excede el monto original invertido, generando un gigantesco desfase acumulado de más de 20.9 mil millones.
-
-Financieramente, esto puede explicarse por una capitalización sumamente agresiva de intereses compensatorios y moratorios, o bien por una falla estructural en el registro del sistema core bancario. En cualquier escenario corporativo, este subgrupo requiere una conciliación inmediata.
+Se detectaron 3,050 cuentas cuyo saldo deudor excede el capital original, acumulando una diferencia de 20,999 millones. Este desfase responde típicamente a la acumulación de intereses moratorios no cancelados o a inconsistencias en la migración de datos del sistema transaccional, requiriendo conciliación contable.
 
 ## Pregunta #7: ¿Los clientes en mora tienen un pago atrasado superior al promedio global?
-Para dar escalabilidad al modelo, utilicé una Subconsulta Escalar. En lugar de filtrar la deuda contra un número estático, la cláusula WHERE compara la mora de cada cliente contra el promedio global dinámico (SELECT AVG...), permitiendo que el reporte se auto-actualice si ingresan nuevos datos.
+Filtrado de operaciones en mora ('B') cuyo monto atrasado supera el promedio general de la cartera mediante una subconsulta escalar.
 
 ```sql
 -- Impacto del Riesgo: Clientes morosos ('B') con deuda superior al promedio general --
@@ -257,12 +251,10 @@ WHERE QUALITY_OF_LOAN = 'B'
 
 *Comparativa del riesgo extremo versus el atraso promedio de toda la cartera*
 
-El uso de la subconsulta revela una disparidad alarmante. Hemos aislado a 318 "morosos críticos" cuya deuda supera la media general.
-
-Mientras el atraso promedio global se sitúa en aproximadamente 375 mil, este subgrupo específico mantiene una deuda vencida promedio superior a 4.7 millones (más de 12 veces la media general), demostrando que una ínfima fracción de la cartera requiere provisiones de capital extremadamente fuertes.
+De toda la cartera, 318 clientes en mora superan el pago atrasado promedio global (375,820), alcanzando una media de 4.71 millones en este subgrupo. Esta concentración focaliza el riesgo patrimonial en menos del 1% de las cuentas.
 
 ## Pregunta #8: ¿Cuál es el promedio de cuota en el sector rural según su modo de pago?
-Para mejorar la eficiencia y legibilidad de la consulta, estructuré una Expresión de Tabla Común (CTE) utilizando la cláusula WITH AS. Primero aislé toda la información pertinente al sector 'Rural' en una tabla temporal en memoria, sobre la cual luego ejecuté las funciones de agregación.
+Uso de una CTE para segmentar la cartera rural y calcular la cuota promedio según la modalidad de pago asignada.
 
 ```sql
 -- Análisis de Mora (CTE): Promedio de cuota en el sector rural por modo de pago --
@@ -288,12 +280,10 @@ ORDER BY Promedio_Cuota DESC;
 
 *Tamaño de cuota mensual promedio por modo de pago en el segmento Rural*
 
-La estructuración mediante CTE expone una dicotomía radical dentro del portafolio rural. La inmensa mayoría de la cartera (24,125 clientes) opera bajo el modo de pago 'N' con cuotas promedio sumamente manejables de 354.36.
-
-En contraste, existe un nicho hiperconcentrado de 1,530 operaciones bajo el modo 'I' cuyas cuotas promedio se disparan por encima de 171,000. Esto sugiere la coexistencia de dos productos (microcréditos masivos frente a financiamientos corporativos/agrícolas), exigiendo políticas de evaluación de riesgo separadas.
+La cartera rural se divide en dos perfiles opuestos: la modalidad 'N' abarca el 94% de las operaciones con una cuota promedio baja (354.36), mientras que la modalidad 'I' agrupa 1,530 cuentas con una cuota promedio de 171,837. Esto evidencia la coexistencia de microcrédito minorista y crédito agropecuario/comercial en la misma base.
 
 ## Pregunta #9: Generar un ranking de los prestatarios con mayor deuda dentro de cada tipo de cliente.
-Para aislar a los deudores críticos sin perder la perspectiva regional, implementé Funciones de Ventana (Window Functions). Utilicé ROW_NUMBER() combinado con la cláusula OVER(PARTITION BY) para reiniciar el ranking automáticamente cada vez que el sistema evalúa una nueva zona demográfica.
+Aplicación de ROW_NUMBER() particionado por tipo de cliente para clasificar los créditos con mayor monto en mora dentro de cada zona.
 ```sql
 -- Ranking regionalizado de deudores críticos --
 
@@ -312,13 +302,11 @@ ORDER BY Tipo_Cliente, Ranking_Riesgo;
 
 *Top de clientes con mayor monto atrasado particionado por segmento*
 
-La partición de los datos demuestra su enorme valor analítico al permitir descentralizar la gestión de cobranza. Al generar un ranking interno, garantizamos que los gerentes de las zonas Urbanas puedan visualizar y atacar a sus propios "peores clientes" con estrategias focalizadas.
-
-Si aplicáramos un filtro global simple, los gigantescos montos en mora del área rural (donde el cliente número uno adeuda más de 370 millones) ocultarían por completo el riesgo de los demás sectores, sesgando la toma de decisiones.
+Particionar el ranking por segmento evita que la magnitud de la deuda rural (con saldos individuales de hasta 370 millones) opaque a los deudores críticos de zonas urbanas y semiurbanas, facilitando estrategias de cobranza segmentadas por plaza.
 
 ### Pregunta #10: ¿Cuál es la evolución del monto total invertido acumulado para los préstamos malos?
 
-Para calcular el riesgo acumulado progresivo (*Running Total*), implementé una Función de Ventana avanzada. A diferencia de un `SUM` tradicional que colapsa los datos, utilizar `SUM() OVER(ORDER BY ...)` permite sumar el capital de forma acumulativa fila por fila, reteniendo el nivel de detalle transaccional de cada cuenta en mora para facilitar la construcción de curvas de Pareto.
+Cálculo del saldo original acumulado (*running total*) para la cartera en mora ('B'), ordenado descendentemente por saldo deudor actual.
 
 ```sql
 -- Acumulado de Inversión en Riesgo (Running Total para préstamos malos) --
@@ -337,9 +325,7 @@ ORDER BY Saldo_Actual DESC;
 
 *Evolución acumulada del capital original en riesgo ordenado por saldo deudor actual*
 
-El cálculo del Running Total expone la agresiva velocidad a la que se concentra el capital en pérdida dentro del portafolio. Al ordenar de mayor a menor saldo deudor, el modelo revela que apenas las primeras 19 operaciones morosas acumulan por sí solas una exposición original superior a los 504 millones.
-
-Adicionalmente, el comportamiento del motor SQL al agrupar los empates exactos en los saldos actuales (por ejemplo, múltiples cuentas compartiendo un saldo exacto de 72,172,616) sugiere fuertemente que un mismo cliente o grupo económico rural mantiene múltiples líneas de crédito simultáneas en estado de default. Esta altísima concentración evidencia la necesidad de establecer topes de exposición máxima por titular para proteger el patrimonio institucional.
+Las primeras 19 cuentas en mora concentran una exposición original acumulada de más de 504 millones. La presencia de cuentas con saldos idénticos sugiere operaciones asociadas a un mismo grupo económico o desembolsos corporativos simultáneos, justificando límites consolidados por titular.
 
 ---
 ## Conclusiones Clave
