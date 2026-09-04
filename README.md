@@ -7,7 +7,7 @@
 
 ## Resumen
 
-Proyecto de análisis exploratorio de datos (EDA) sobre una cartera crediticia utilizando SQL Server (T-SQL). El análisis abarca la limpieza de datos, la identificación de patrones de morosidad, la concentración de riesgo por segmento demográfico y la detección de inconsistencias operativas en los registros de saldo deudor.
+Proyecto de análisis exploratorio de datos (EDA) sobre una cartera crediticia utilizando SQL Server. El análisis abarca la limpieza de datos, la identificación de patrones de morosidad, la concentración de riesgo por segmento demográfico y la detección de inconsistencias operativas en los registros de saldo deudor.
 
 ---
 
@@ -156,7 +156,7 @@ ORDER BY DUE_PAYMENT DESC;
 
 Los 5 principales deudores en mora pertenecen en su totalidad al segmento Rural y al estado civil Casado (M), encabezados por un cliente que registra un monto atrasado superior a los 155 millones.
 
-Esta coincidencia demográfica en los casos más extremos confirma que el riesgo de severidad de pérdida (Loss Given Default - LGD) está altamente concentrado. Este grupo requiere planes de reestructuración y cobranza judicial prioritaria para contener el deterioro de provisiones.
+Esta coincidencia demográfica en los casos más extremos confirma que el riesgo de severidad de pérdida está altamente concentrado. Este grupo requiere planes de reestructuración y cobranza judicial prioritaria para contener el deterioro de provisiones.
 
 ## Pregunta #4: ¿Cómo varía la calidad del préstamo según rangos del tamaño de cuota?
 Segmentación de la cartera en rangos de cuota mensual y cálculo de la morosidad respectiva por tramo.
